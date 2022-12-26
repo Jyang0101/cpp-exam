@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define max 30 
+
+int main()
+{
+	int i, k, n, m, num[max], *p;
+	
+	printf("輸入開始報數時總人數：");
+	scanf("%d",&n);
+	
+	p=num;
+	
+	for(i=0; i<n; i++)
+		*(p+i)=i+1;
+	printf("依次出圈的人的編號：\n");
+	
+	i=0; k=10; m=0;
+	
+	while(m < n-1)
+	{
+		if(*(p+i)!=0)
+		{
+			printf("編號%d 的人(報數%d)",*(p+i), k);
+			
+			if(k==7)
+			{
+				printf("出圈");
+				*(p+i)=0;
+				m++;
+			}
+			
+			if(k==1)
+			{
+				k=11;
+			}// the end:)
+			
+			printf(" \n");
+			k-=1;
+		}
+		i++;
+		
+		if(i==n)
+			i=0;
+	}
+	for(i=0; i<n;i++)
+		if(*(p+i)!=0)
+			printf("\n最後一位出圈的人的編號：%d\n", *(p+i));
+			
+	return 0;
+} 
