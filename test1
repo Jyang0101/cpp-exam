@@ -1,0 +1,141 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <cv.h>			//Open CV涵式庫 
+#include <highgui.h>	//Open CV涵式庫
+
+int main(void)
+{
+	/*---------------------------------------------變數宣告-------------------------------------------------*/ 
+	char directKey,space1[100],space2[100],space3[100];//鍵盤輸入字元變數         	
+	IplImage *ImageRoad,*ImageCar,*ImageMaskCar, *ImageGift, *ImageMaskGift;      //宣告道路,汽車與汽車mask圖片, 禮物與禮物mask圖片IplImage的資料結構
+	int car_Xaxis=200,car_Yaxis=550;	//宣告汽車的x, y座標 
+    int x=50,y=50;//禮物產生初始座標 
+	int z,down,c=0,p=0;//下降和計分變數
+	int a, b;//a與b定義汽車接收禮物的x軸範圍 
+    
+	/*-------亂數變數--------*/
+	srand(time(NULL));
+	
+   	/*-------文字變數--------*/
+	CvPoint TextPosition1,TextPosition2,TextPosition3,TextPosition4,TextPosition5; //CvPoint資料結構文字座標
+	CvFont Font;          //宣告CvFont資料結構
+	int thickness;			 //字體粗細
+	double fontSize;		 //字型大小比例
+	CvScalar Color;          //宣告顏色
+	Color=CV_RGB(255,255,255);
+	thickness=1;			//繪圖元件線條粗細設定						 
+    fontSize=1.2;			//字型大小設定	
+    /*-------文字變數--------*/ 
+	Font=cvFont(fontSize,thickness);
+	
+    
+	do
+	{
+		ImageRoad=cvLoadImage("road.jpg");	//載入道路圖片 
+		ImageCar=cvLoadImage("car.png");	//載入汽車圖片
+		ImageMaskCar=cvLoadImage("car.png",0);	//載入汽車mask圖片 
+		ImageGift=cvLoadImage("gift.jpg");	//載入禮物圖片
+		ImageMaskGift=cvLoadImage("gift.jpg",0);	//載入禮物mask圖片 
+		cvThreshold(ImageMaskCar,ImageMaskCar,254,255,CV_THRESH_BINARY_INV);	//二值化	(輸入圖,輸出圖,閾直,最大值,操作型態(超過閾值的像素設為0，小於閾值的設為最大值) 
+		cvThreshold(ImageMaskGift,ImageMaskGift,240,255,CV_THRESH_BINARY_INV);	//二值化	(輸入圖,輸出圖,閾直,最大值,操作型態(超過閾值的像素設為0，小於閾值的設為最大值) 	
+		
+		/*---------設定遊戲畫面文字顯示位置 -------------*/
+		TextPosition1=cvPoint(ImageRoad->width/4-60,50);  
+		TextPosition2=cvPoint(ImageRoad->width/4-60,75);
+		TextPosition3=cvPoint(ImageRoad->width/2+30,75);
+		TextPosition4=cvPoint(ImageRoad->width/4-60,100);
+		TextPosition5=cvPoint(ImageRoad->width/4-60,125);
+	
+		/*========================以下程式由鍵盤控制車子移動====================================*/		
+		while(kbhit())			//判斷鍵盤是否有被按下(如果沒有用While迴圈會發生甚麼事情呢?) 
+	    {
+		               
+	    	directKey=getch();		//讀取鍵盤輸入字元  
+	    	printf("按下鍵盤%c\n", directKey);
+			switch(directKey)
+	        {	case 45:   //鍵盤輸入4汽車x座標遞減10; 
+					if(ImageRoad->height-2*ImageGift->height)
+						z-10;
+						down=z;	
+	            	break; 
+				case 43:   //鍵盤輸入4汽車x座標遞減10; 
+					if(ImageRoad->height-2*ImageGift->height)
+						z+10;
+						down=z;	
+	            	break; 
+				case 56:   //鍵盤輸入4汽車x座標遞減10; 
+					if(car_Yaxis>=11)
+						car_Yaxis-=10;	
+	            	break; 
+	            case 50:   //鍵盤輸入6汽車x座標遞增10	
+					if(car_Yaxis<=ImageRoad->width-2*ImageCar->width)
+						car_Yaxis+=10;
+					break;
+	        	case 52:   //鍵盤輸入4汽車x座標遞減10; 
+					if(car_Xaxis>=11)
+						car_Xaxis-=10;	
+	            	break; 
+	            
+	            case 54:   //鍵盤輸入6汽車x座標遞增10	
+					if(car_Xaxis<=ImageRoad->width-2*ImageCar->width)
+						car_Xaxis+=10;
+					break;			
+	        }
+		}
+		a=car_Xaxis-ImageCar->width;//更新a與b值，重新計算汽車接收禮物的x軸範圍 
+		b=car_Xaxis+ImageCar->width;//更新a與b值，重新計算汽車接收禮物的x軸範圍 
+		
+		if(y<=ImageRoad->height)
+		{	
+			down=(rand()%15);//下降速度的亂數
+			if(y<=ImageRoad->height-2*ImageGift->height)
+			{		
+				y+=down;		//圓形Y座標累加代表往下移動	
+				cvSetImageROI(ImageRoad,cvRect(x,y,ImageGift->width,ImageGift->height));	//設置感興區域 (感興區域為圖1的一部份,(起始X座標,起始y做標,圖2寬度,圖2高度)) 
+				cvCopy(ImageGift,ImageRoad,ImageMaskGift);	//將禮物圖片複製到感興區域 	白色255的部份為顯示出來的區域,黑色為0的部份為不顯示出來的區域,白色的部份還原成圖片
+				cvResetImageROI(ImageRoad);	//釋放感興區域 
+			
+				if((x>=a && x<=b) && y>=car_Yaxis)		//當禮物在汽車的範圍內+碰到汽車的時候 y>=car_Yaxis
+				{	
+					y=50;			//y座標初始化		
+					x= (rand()%(ImageRoad->width-ImageGift->width));//隨機出現禮物的位子  
+					c++; //接到禮物分數+1 
+				} 
+				else if((x<a || x>b) && y>=car_Yaxis + ImageCar->height)		//當禮物不在汽車的範圍內+到汽車高度時 
+				{
+					y=50;		//y座標初始化
+					x= (rand()%(ImageRoad->width-ImageGift->width));	//隨機出現禮物的位子  
+					p++;	//miss禮物數量+1 
+				}
+			}
+			else
+			{
+				y=50;
+				x= (rand()%(ImageRoad->width-ImageGift->width));//隨機出現禮物的位子  
+			}
+		}
+				
+		cvPutText(ImageRoad,"********************************",TextPosition1,&Font,Color);
+		sprintf(space1,"catch the GIFTS:%d",c);//文自變數變成數字變數
+		cvPutText(ImageRoad,space1,TextPosition2,&Font,Color);
+		sprintf(space2,"miss the GIFTS:%d",p);//文自變數變成數字變數
+		cvPutText(ImageRoad,space2,TextPosition3,&Font,Color);
+		sprintf(space3,"press Ctrl+q to leave...",p);//文自變數變成數字變數
+		cvPutText(ImageRoad,space3,TextPosition4,&Font,Color);
+		cvPutText(ImageRoad,"********************************",TextPosition5,&Font,Color);
+		
+		cvSetImageROI(ImageRoad,cvRect(car_Xaxis,car_Yaxis,ImageCar->width,ImageCar->height));	//設置感興區域 (感興區域為圖1的一部份,(起始X座標,起始y做標,圖2寬度,圖2高度)) 
+		cvCopy(ImageCar,ImageRoad,ImageMaskCar);	//將汽車圖片複製到感興區域 	白色255的部份為顯示出來的區域,黑色為0的部份為不顯示出來的區域,白色的部份還原成圖片
+		cvResetImageROI(ImageRoad);	//釋放感興區域 
+		cvShowImage("Final_A",ImageRoad); //顯示繪圖介面物件 	
+		cvWaitKey(1);	//延緩0.001秒若沒有按下任何案件往下執行 		
+		cvReleaseImage(&ImageRoad); //釋放汽車IplImage圖形資料結構所占用的記憶體
+		 
+	}while(directKey!=17);
+	
+	return 0;
+}
+							
+	
+	
